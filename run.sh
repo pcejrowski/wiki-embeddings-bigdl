@@ -7,7 +7,7 @@ BASE_DIR="/home/pcejrowski/Private/studies/distributed-systems/wiki-embeddings/d
 
 ${BIGDL_HOME}/scripts/bigdl.sh -- ${SPARK_HOME}/bin/spark-submit \
    --master "local[4]" \
-   --driver-memory 2g \
+   --driver-memory 10g \
    --class pl.edu.pg.eti.WikiEmbeddings \
 ${TARGET_HOME}/wiki-embeddings.jar \
    --baseDir ${BASE_DIR}

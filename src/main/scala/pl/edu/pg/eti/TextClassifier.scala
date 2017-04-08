@@ -19,7 +19,7 @@ class TextClassifier(param: TextClassificationParams) {
   val log: Logger = LoggerFactory.getLogger(this.getClass)
   val gloveDir = s"${param.baseDir}/glove.6B/"
   val textDataDir = s"${param.baseDir}"
-  var classNum = -1
+  var classNum = new DataSets(param.baseDir).categoriesDict().size
 
   def train(): Unit = {
     import SimpleTokenizer._
