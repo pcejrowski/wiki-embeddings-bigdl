@@ -63,13 +63,14 @@ class TextClassifier(param: TextClassificationParams) {
 
     val state = T("learningRate" -> 0.01, "learningRateDecay" -> 0.0002)
 
-    optimizer
+    val model = optimizer
       .setState(state)
       .setOptimMethod(new Adagrad())
       .setValidation(Trigger.everyEpoch, valRDD, Array(new Top1Accuracy[Float]), param.batchSize)
-      .setEndWhen(Trigger.maxEpoch(20))
+      .setEndWhen(Trigger.maxEpoch(100))
       .optimize()
 
+    model.save("model.serialized", overWrite = true)
     sc.stop()
   }
 }
