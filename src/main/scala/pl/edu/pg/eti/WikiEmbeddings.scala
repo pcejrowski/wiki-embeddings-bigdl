@@ -1,17 +1,22 @@
 package pl.edu.pg.eti
 
-import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import com.intel.analytics.bigdl.utils.LoggerFilter
+import org.apache.log4j.{Level => Levle4j, Logger => Logger4j}
+import org.slf4j.LoggerFactory
 
 object WikiEmbeddings {
+  val log = LoggerFactory.getLogger(this.getClass)
+  LoggerFilter.redirectSparkInfoLogs()
+  Logger4j.getLogger("com.intel.analytics.bigdl.optim").setLevel(Levle4j.INFO)
 
   def main(args: Array[String]): Unit = {
-    val conf: SparkConf = new SparkConf()
-      .setAppName("wiki-embeddings")
-      .setMaster("local[4]")
-    val sc: SparkContext = new SparkContext(conf)
+    ConfigParser
+      .configParser
+      .parse(args, TextClassificationParams())
+      .foreach { param =>
+        log.info(s"Current parameters: $param")
+        new TextClassifier(param).train()
+      }
 
   }
 }

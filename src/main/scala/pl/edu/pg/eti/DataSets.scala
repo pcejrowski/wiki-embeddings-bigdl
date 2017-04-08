@@ -20,7 +20,7 @@ class DataSets(val baseDir: String = "datasets") {
     load(fileName, toStringOnInt)
   }
 
-  def categories(fileName: String = "categories"): Map[Int, Set[Int]] = {
+  def articleCategories(fileName: String = "categories"): Map[Int, Set[Int]] = {
     load(fileName, toIntOnIntSet)
   }
 
