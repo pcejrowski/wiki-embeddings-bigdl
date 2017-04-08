@@ -12,6 +12,23 @@ class DataSets(val baseDir: String = "datasets") {
     intTokens.head -> intTokens.tail.toSet
   }
 
+  def loadData(): Array[(String, Float)] = {
+    val dataSets = new DataSets(baseDir)
+    val texts: Map[String, String] = dataSets.corpus()
+    val articleLabels: Map[String, Int] = dataSets.articlesDict()
+    val articleCategories: Map[Int, Set[Int]] = dataSets.articleCategories()
+
+    texts
+      .flatMap { case (title, content) =>
+        val articleId: Int = articleLabels.getOrElse(title, 0)
+        val articleCategoryIds: Set[Int] = articleCategories.getOrElse(articleId, Set[Int]())
+        articleCategoryIds
+          .map(cat => content -> cat.toFloat)
+      }
+      .toArray
+  }
+
+
   def articlesDict(fileName: String = "articles_dict"): Map[String, Int] = {
     load(fileName, toStringOnInt)
   }

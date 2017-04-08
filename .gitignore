@@ -68,3 +68,4 @@ crashlytics-build.properties
 fabric.properties
 /datasets/corpus.txt
 /.idea/
+/datasets/glove.6B/
