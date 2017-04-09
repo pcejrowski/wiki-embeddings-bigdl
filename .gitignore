@@ -69,3 +69,4 @@ fabric.properties
 /datasets/corpus.txt
 /.idea/
 /datasets/glove.6B/
+/model.serialized

@@ -23,8 +23,8 @@ class Model(param: TextClassificationParams) {
       .add(SpatialMaxPooling(35, 1, 35, 1))
 
       .add(Reshape(Array(128)))
-      .add(Linear(128, 100))
-      .add(Linear(100, classNum))
+      .add(Linear(128, 1000))
+      .add(Linear(1000, classNum))
       .add(LogSoftMax())
 
   }

@@ -20,6 +20,7 @@ class DataSets(val baseDir: String = "datasets") {
     val articleCategories: Map[Int, Set[Int]] = dataSets.articleCategories()
 
     texts
+      .toArray
       .flatMap { case (title, content) =>
         for {
           articleId <- articleLabels.get(title)
@@ -28,7 +29,6 @@ class DataSets(val baseDir: String = "datasets") {
       }
       .flatten
       .filter { case (content, id) => id != .0f }
-      .toArray
   }
 
 

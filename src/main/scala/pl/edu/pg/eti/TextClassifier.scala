@@ -40,19 +40,20 @@ class TextClassifier(param: TextClassificationParams) {
     val word2MetaBC = sc.broadcast(word2Meta)
     val word2VecBC = sc.broadcast(word2Vec)
 
-    val vectorizedRdd = dataRdd
+    val vectorizedRdd: RDD[(Array[Array[Float]], Float)] = dataRdd
       .map { case (text, label) => (toTokens(text, word2MetaBC.value), label) }
       .map { case (tokens, label) => (shaping(tokens, sequenceLen), label) }
       .map { case (tokens, label) => (vectorization(tokens, embeddingDim, word2VecBC.value), label) }
 
     val sampleRDD: RDD[Sample[Float]] = vectorizedRdd
       .map { case (input: Array[Array[Float]], label: Float) =>
-        Sample(featureTensor = Tensor(input.flatten, Array(sequenceLen, embeddingDim)).transpose(1, 2).contiguous(),
+        Sample(featureTensor =
+          Tensor(input.flatten, Array(sequenceLen, embeddingDim)).transpose(1, 2).contiguous(),
           labelTensor = Tensor(Array(label), Array(1))
         )
       }
 
-    val Array(trainingRDD, valRDD) = sampleRDD.randomSplit(Array(trainingSplit, 1 - trainingSplit))
+    val Array(trainingRDD, valildationRDD) = sampleRDD.randomSplit(Array(trainingSplit, 1 - trainingSplit))
 
     val optimizer = Optimizer(
       model = new Model(param).buildModel(classNum),
@@ -63,11 +64,12 @@ class TextClassifier(param: TextClassificationParams) {
 
     val state = T("learningRate" -> 0.01, "learningRateDecay" -> 0.0002)
 
-    val model = optimizer
+    val model: Module[Float] = optimizer
       .setState(state)
       .setOptimMethod(new Adagrad())
-      .setValidation(Trigger.everyEpoch, valRDD, Array(new Top1Accuracy[Float]), param.batchSize)
-      .setEndWhen(Trigger.maxEpoch(100))
+      .setDropMoudleProperty(0.1, 0.2)
+      .setValidation(Trigger.everyEpoch, valildationRDD, Array(new Top5Accuracy[Float]), param.batchSize)
+      .setEndWhen(Trigger.maxEpoch(10))
       .optimize()
 
     model.save("model.serialized", overWrite = true)

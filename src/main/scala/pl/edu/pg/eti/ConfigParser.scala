@@ -11,11 +11,11 @@ import scopt.OptionParser
   * @param embeddingDim      size of the embedding vector
   */
 case class TextClassificationParams(baseDir: String = "./datasets",
-                                    maxSequenceLength: Int = 10000,
-                                    maxWordsNum: Int = 200000,
+                                    maxSequenceLength: Int = 1000,
+                                    maxWordsNum: Int = 20000,
                                     trainingSplit: Double = 0.8,
-                                    batchSize: Int = 128,
-                                    embeddingDim: Int = 64,
+                                    batchSize: Int = 32,
+                                    embeddingDim: Int = 100,
                                     partitionNum: Int = 4)
 object ConfigParser {
   val configParser = new OptionParser[TextClassificationParams]("BigDL Example") {

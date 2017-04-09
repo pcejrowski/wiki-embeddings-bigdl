@@ -9,6 +9,5 @@ object WikiEmbeddings {
       .foreach { param =>
         new TextClassifier(param).train()
       }
-    Console.in.read.toChar
   }
 }
