@@ -10,6 +10,21 @@ unzip -q glove.6B.zip -d glove.6B
 ```
 https://github.com/LGDoor/Dump-of-Simple-English-Wiki/blob/master/corpus.tgz
 ```
+##### Place the downloaded datasets so that the dataset file looks like this:
+```
+$ cd datasets 
+$ tree
+    .
+    ├── articles_dict
+    ├── categories
+    ├── cats_dict
+    ├── corpus.txt
+    └── glove.6B
+        ├── glove.6B.100d.txt
+        ├── glove.6B.200d.txt
+        ├── glove.6B.300d.txt
+        └── glove.6B.50d.txt
+```
 
 ### Accuracy issues
 article belongs to many categories
