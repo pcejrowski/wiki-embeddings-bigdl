@@ -1,6 +1,6 @@
 package pl.edu.pg.eti
 
-object WikiEmbeddings {
+object Main {
 
   def main(args: Array[String]): Unit = {
     ConfigParser

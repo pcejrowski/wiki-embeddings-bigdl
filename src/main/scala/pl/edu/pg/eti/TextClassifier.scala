@@ -2,7 +2,7 @@ package pl.edu.pg.eti
 
 import com.intel.analytics.bigdl._
 import com.intel.analytics.bigdl.dataset._
-import com.intel.analytics.bigdl.example.textclassification.SimpleTokenizer
+import com.intel.analytics.bigdl.example.utils.SimpleTokenizer
 import com.intel.analytics.bigdl.nn.ClassNLLCriterion
 import com.intel.analytics.bigdl.optim._
 import com.intel.analytics.bigdl.tensor.Tensor
@@ -11,11 +11,16 @@ import org.apache.log4j.{Level => Levle4j, Logger => Logger4j}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.slf4j.{Logger, LoggerFactory}
+import pl.edu.pg.eti.DataSets.{Content, NewCategoryIdF}
+import pl.edu.pg.eti.Word2Vec.WordMetaIdxF
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.existentials
 
 class TextClassifier(param: TextClassificationParams) {
+
+  import TextClassifier._
+
   val log: Logger = LoggerFactory.getLogger(this.getClass)
   val gloveDir = s"${param.baseDir}/glove.6B/"
   val textDataDir = s"${param.baseDir}"
@@ -34,16 +39,22 @@ class TextClassifier(param: TextClassificationParams) {
     val embeddingDim: Int = param.embeddingDim
     val trainingSplit: Double = param.trainingSplit
 
-    val data: Array[(String, Float)] = new DataSets(textDataDir).loadData()
+    val data: Array[(Content, NewCategoryIdF)] = new DataSets(textDataDir).loadData()
     val dataRdd = sc.parallelize(data, param.partitionNum)
     val (word2Meta, word2Vec) = new TextAnalyzer(gloveDir, param).analyzeTexts(dataRdd)
     val word2MetaBC = sc.broadcast(word2Meta)
     val word2VecBC = sc.broadcast(word2Vec)
 
-    val vectorizedRdd: RDD[(Array[Array[Float]], Float)] = dataRdd
-      .map { case (text, label) => (toTokens(text, word2MetaBC.value), label) }
-      .map { case (tokens, label) => (shaping(tokens, sequenceLen), label) }
-      .map { case (tokens, label) => (vectorization(tokens, embeddingDim, word2VecBC.value), label) }
+    val vectorizedRdd: RDD[(Array[WordVec], NewCategoryIdF)] = dataRdd
+      .map { case (text: Content, label: NewCategoryIdF) =>
+        (toTokens(text, word2MetaBC.value), label)
+      }
+      .map { case (tokens: Array[WordMetaIdxF], label: NewCategoryIdF) =>
+        (shaping(tokens, sequenceLen), label)
+      }
+      .map { case (tokens: Array[WordMetaIdxF], label: NewCategoryIdF) =>
+        (vectorization(tokens, embeddingDim, word2VecBC.value), label)
+      }
 
     val sampleRDD: RDD[Sample[Float]] = vectorizedRdd
       .map { case (input: Array[Array[Float]], label: Float) =>
@@ -75,6 +86,10 @@ class TextClassifier(param: TextClassificationParams) {
     model.save("model.serialized", overWrite = true)
     sc.stop()
   }
+}
+
+object TextClassifier {
+  type WordVec = Array[Float]
 }
 
 

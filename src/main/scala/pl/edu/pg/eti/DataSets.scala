@@ -5,6 +5,9 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 class DataSets(val baseDir: String = "datasets") {
+
+  import DataSets._
+
   private val toStringOnInt: Array[String] => ((String, Int)) = tokens => tokens(0) -> tokens(1).toInt
 
   private val toIntOnIntSet: Array[String] => ((Int, Set[Int])) = { tokens =>
@@ -12,12 +15,12 @@ class DataSets(val baseDir: String = "datasets") {
     intTokens.head -> intTokens.tail.toSet
   }
 
-  def loadData(): Array[(String, Float)] = {
+  def loadData(): Array[(Content, NewCategoryIdF)] = {
     val dataSets = new DataSets(baseDir)
-    val texts: Map[String, String] = dataSets.corpus()
-    val articleLabels: Map[String, Int] = dataSets.articlesDict()
-    val categoriesLabels: Map[Int, Int] = dataSets.categoriesDict()
-    val articleCategories: Map[Int, Set[Int]] = dataSets.articleCategories()
+    val texts: Map[Title, Content] = dataSets.corpus()
+    val articleLabels: Map[Title, ArticleId] = dataSets.articlesDict()
+    val categoriesLabels: Map[CategoryId, NewCategoryId] = dataSets.categoriesDict()
+    val articleCategories: Map[ArticleId, Set[CategoryId]] = dataSets.articleCategories()
 
     texts
       .toArray
@@ -32,7 +35,7 @@ class DataSets(val baseDir: String = "datasets") {
   }
 
 
-  def articlesDict(fileName: String = "articles_dict"): Map[String, Int] = {
+  def articlesDict(fileName: String = "articles_dict"): Map[Title, ArticleId] = {
     load(fileName, toStringOnInt)
       .map {
         case (title, id) => title.replace(' ', '_') -> id
@@ -40,7 +43,7 @@ class DataSets(val baseDir: String = "datasets") {
       .toMap
   }
 
-  def categoriesDict(fileName: String = "cats_dict"): Map[Int, Int] = {
+  def categoriesDict(fileName: String = "cats_dict"): Map[CategoryId, NewCategoryId] = {
     load(fileName, toStringOnInt)
       .zipWithIndex
       .map {
@@ -49,11 +52,12 @@ class DataSets(val baseDir: String = "datasets") {
       .toMap
   }
 
-  def articleCategories(fileName: String = "categories"): Map[Int, Set[Int]] = {
+  def articleCategories(fileName: String = "categories"): Map[ArticleId, Set[CategoryId]] = {
     load(fileName, toIntOnIntSet).toMap
   }
 
-  def corpus(fileName: String = "corpus.txt"): Map[String, String] = {
+
+  def corpus(fileName: String = "corpus.txt"): Map[Title, Content] = {
     val fileLines: Iterator[String] = Source.fromFile(s"$baseDir/$fileName")
       .getLines()
 
@@ -73,11 +77,20 @@ class DataSets(val baseDir: String = "datasets") {
     result.toMap
   }
 
-  private def load[T, U](fileName: String, transformer: Array[String] => ((T, U))): List[(T, U)] = {
+  private def load[T](fileName: String, transformer: Array[String] => T): List[T] = {
     Source.fromFile(s"$baseDir/$fileName")
       .getLines()
       .map(_.split("\\s+"))
       .map(transformer)
       .toList
   }
+}
+
+object DataSets {
+  type Title = String
+  type Content = String
+  type ArticleId = Int
+  type CategoryId = Int
+  type NewCategoryId = Int
+  type NewCategoryIdF = Float
 }
