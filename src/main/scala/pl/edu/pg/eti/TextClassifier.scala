@@ -33,7 +33,7 @@ class TextClassifier(param: TextClassificationParams) {
       .set("spark.task.maxFailures", "1")
 
     val sc = new SparkContext(conf)
-    Engine.init
+//    Engine.init
 
     val sequenceLen: Int = param.maxSequenceLength
     val embeddingDim: Int = param.embeddingDim
