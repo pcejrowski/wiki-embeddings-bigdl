@@ -11,6 +11,7 @@ import tensorflow as tf
 from nltk.corpus import stopwords
 from six.moves import range
 
+
 # cachedStopWords = stopwords.words("english")
 
 def take(n, iterable):
@@ -111,11 +112,13 @@ with graph.as_default(), tf.device('/cpu:0'):
     train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
 
     embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0))
-    softmax_weights = tf.Variable(tf.truncated_normal([vocabulary_size, embedding_size], stddev=1.0 / math.sqrt(embedding_size)))
+    softmax_weights = tf.Variable(
+        tf.truncated_normal([vocabulary_size, embedding_size], stddev=1.0 / math.sqrt(embedding_size)))
     softmax_biases = tf.Variable(tf.zeros([vocabulary_size]))
 
     embed = tf.nn.embedding_lookup(embeddings, train_dataset)
-    loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(softmax_weights, softmax_biases, train_labels, embed, num_sampled, vocabulary_size))
+    loss = tf.reduce_mean(
+        tf.nn.sampled_softmax_loss(softmax_weights, softmax_biases, train_labels, embed, num_sampled, vocabulary_size))
     optimizer = tf.train.AdagradOptimizer(1.0).minimize(loss)
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
     normalized_embeddings = embeddings / norm
@@ -140,3 +143,30 @@ with tf.Session(graph=graph) as session:
 with open('../../../datasets/simple-wiki-embeddings.txt', 'a') as the_file:
     for x in range(0, len(final_embeddings)):
         the_file.write(reverse_dictionary[x].lower() + ' ' + ' '.join(str(x) for x in final_embeddings[x]) + '\n')
+
+num_points = 400
+
+import collections
+import random
+import tensorflow as tf
+import zipfile
+from matplotlib import pylab
+from sklearn.manifold import TSNE
+
+tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
+two_d_embeddings = tsne.fit_transform(final_embeddings[1:num_points + 1, :])
+
+
+def plot(embeddings, labels):
+    assert embeddings.shape[0] >= len(labels), 'More labels than embeddings'
+    pylab.figure(figsize=(15, 15))  # in inches
+    for i, label in enumerate(labels):
+        x, y = embeddings[i, :]
+        pylab.scatter(x, y)
+        pylab.annotate(label, xy=(x, y), xytext=(5, 2), textcoords='offset points',
+                       ha='right', va='bottom')
+    pylab.show()
+
+
+words = [reverse_dictionary[i].decode('utf-8') for i in range(1, num_points + 1)]
+plot(two_d_embeddings, words)

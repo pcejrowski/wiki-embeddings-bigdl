@@ -71,3 +71,4 @@ fabric.properties
 /datasets/glove.6B/
 /model.serialized
 /src/main/python/text8
+/datasets/simple-wiki-embeddings.txt
