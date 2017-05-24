@@ -98,7 +98,4 @@ object TextClassifier {
   * 2) na kategoriach zrobić reprezentacje na słowach (TF-IDF)
   * 3) porównać z wynikami uzyskanymi poprzez reprezentacje na Embeddingsach
   * 4) wrzucenie reprezentacji na NN
-  *
-  *
-  *
   */

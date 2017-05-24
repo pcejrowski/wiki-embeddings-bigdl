@@ -70,3 +70,4 @@ fabric.properties
 /.idea/
 /datasets/glove.6B/
 /model.serialized
+/src/main/python/text8
