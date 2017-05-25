@@ -46,3 +46,13 @@ The issue is that the accuracy is low because the categories are somehow mixed
 articleId -> cat1Id
 
 The issue is that we loose many connections 
+
+
+- kilka grup kategorii np matematycy, filozxofowie, zwierzeta, historia
+- matematycy powinni byc blisko filozofow, dalej zwierzat
+
+- konwersja artykulx(vector + kategoria) -> odleglosc miedzy kategoriami
+- albo wrzucic na NN te vectory
+- albo zsumowac i policzyc odleglosc vectorow
+
+- czy dodawanie nowych danych obniza jakosc?

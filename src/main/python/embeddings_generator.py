@@ -116,6 +116,8 @@ with graph.as_default(), tf.device('/cpu:0'):
         tf.truncated_normal([vocabulary_size, embedding_size], stddev=1.0 / math.sqrt(embedding_size)))
     softmax_biases = tf.Variable(tf.zeros([vocabulary_size]))
 
+# co się dzieje w środku
+# jak jest tworzony embedding
     embed = tf.nn.embedding_lookup(embeddings, train_dataset)
     loss = tf.reduce_mean(
         tf.nn.sampled_softmax_loss(softmax_weights, softmax_biases, train_labels, embed, num_sampled, vocabulary_size))
