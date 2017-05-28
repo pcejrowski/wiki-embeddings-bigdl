@@ -56,3 +56,34 @@ The issue is that we loose many connections
 - albo zsumowac i policzyc odleglosc vectorow
 
 - czy dodawanie nowych danych obniza jakosc?
+
+
+### Manual verification
+
+The following categories are a test set:
+```
+History	6602
+Ancient_history	29636
+War	38468
+
+
+Animals	5861
+Pets	14654
+Domesticated_animals	33670
+
+
+Mathematics	5195
+Mathematicians	19894
+Logic	41358
+
+
+Philosophy	6536
+Philosophers	5375
+Ethics	25540
+```
+
+Expected results:
+```
+History -> Philosophers, Mathematicians, 
+Phiolosophy -> Matemathicians
+```
