@@ -52,8 +52,15 @@ class DataSets(val baseDir: String = "datasets") {
       .toMap
   }
 
+  def categoriesDictRaw(fileName: String = "cats_dict"): Map[CategoryId, CategoryName] = {
+    load(fileName, toStringOnInt).map(x => (x._2, x._1)).toMap
+  }
+
   def articleCategories(fileName: String = "categories"): Map[ArticleId, Set[CategoryId]] = {
     load(fileName, toIntOnIntSet).toMap
+  }
+  def categoriesFilter(fileName: String = "cats_filter"): Set[CategoryId] = {
+    load(fileName, _.head.toInt).toSet
   }
 
 
@@ -93,4 +100,5 @@ object DataSets {
   type CategoryId = Int
   type NewCategoryId = Int
   type NewCategoryIdF = Float
+  type CategoryName = String
 }

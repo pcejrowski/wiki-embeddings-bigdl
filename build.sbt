@@ -2,7 +2,7 @@ name := "wiki-embeddings"
 
 version := "1.0"
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.11.8"
 
 val sparkVersion = "2.1.0"
 
@@ -16,3 +16,10 @@ libraryDependencies += "com.intel.analytics.bigdl" % "bigdl-SPARK_2.0" % "0.2.0-
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 assemblyJarName in assembly := s"${name.value}.jar"
+
+assemblyMergeStrategy in assembly := {
+  case PathList(ps @ _*) if ps.last endsWith "UnusedStubClass.class" => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}

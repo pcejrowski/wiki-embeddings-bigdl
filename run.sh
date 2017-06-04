@@ -3,14 +3,14 @@
 
 whoami=$(whoami)
 
-SPARK_HOME="$HOME/Software/spark-2.1.1-bin-custom-spark/"
+SPARK_HOME="$HOME/Software/spark-2.1.0-bin-hadoop2.7/"
 if [ "${whoami}" = "wpitula" ]
 then
-    TARGET_DIR="$HOME/Studia/sem-3-mgr/wiki-embeddings-bigdl/target/scala-2.10"
+    TARGET_DIR="$HOME/Studia/sem-3-mgr/wiki-embeddings-bigdl/target/scala-2.11"
     BASE_DIR="$HOME/Studia/sem-3-mgr/wiki-embeddings-bigdl/datasets"
 elif [ "${whoami}" = "pcejrowski" ]
 then
-    TARGET_DIR="$HOME/Private/studies/distributed-systems/wiki-embeddings/target/scala-2.10"
+    TARGET_DIR="$HOME/Private/studies/distributed-systems/wiki-embeddings/target/scala-2.11"
     BASE_DIR="$HOME/Private/studies/distributed-systems/wiki-embeddings/datasets"
 fi
 
