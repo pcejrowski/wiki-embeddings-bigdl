@@ -12,7 +12,7 @@ resolvers += Resolver.mavenLocal
 
 libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided"
-libraryDependencies += "com.intel.analytics.bigdl" % "bigdl-SPARK_2.0" % "0.2.0-SNAPSHOT"
+libraryDependencies += "com.intel.analytics.bigdl" % "bigdl-SPARK_2.1" % "0.2.0-SNAPSHOT"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 assemblyJarName in assembly := s"${name.value}.jar"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-
+set -vx
 whoami=$(whoami)
 
 SPARK_HOME="$HOME/Software/spark-2.1.0-bin-hadoop2.7/"

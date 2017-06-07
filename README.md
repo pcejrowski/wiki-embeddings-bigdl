@@ -47,7 +47,18 @@ articleId -> cat1Id
 
 The issue is that we loose many connections 
 
+##### Creating embeddings:
+1. each word is mapped onto one of its closest neighbours with equal probability 0.5
+2. creating vocab dict of arbitrary size (10.000) most frequent words
+2. initialize embeddings: creating matrix 10.000 x 100 (vocabulary size x embeddings size) with random values from U(-1,1)
+3. in each batch (size: 128) we take the embeddings for words used in this batch
+4. softmax weights are initialized with mean: 0 and sd=0.1, bias weights: 0
+5. mean sample softmax loss for batch is calculated (sampled softmax: https://arxiv.org/pdf/1412.2007.pdf)
+6. loss is optmized using Adagrad(1) optimizer
+7. after optimization embeddings are normalized by dividing by L2 norm
 
+
+#### TODO
 - kilka grup kategorii np matematycy, filozxofowie, zwierzeta, historia
 - matematycy powinni byc blisko filozofow, dalej zwierzat
 

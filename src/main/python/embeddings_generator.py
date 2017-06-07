@@ -88,22 +88,11 @@ def generate_batch(batch_size, num_skips, skip_window):
     return batch, labels
 
 
-print('data:', [reverse_dictionary[di] for di in data[:8]])
-
-for num_skips, skip_window in [(2, 1), (4, 2)]:
-    batch, labels = generate_batch(batch_size=8, num_skips=num_skips, skip_window=skip_window)
-    print('\nwith num_skips = %d and skip_window = %d:' % (num_skips, skip_window))
-    print('    batch:', [reverse_dictionary[bi] for bi in batch])
-    print('    labels:', [reverse_dictionary[li] for li in labels.reshape(8)])
-
 num_sampled = 64
 batch_size = 128
 embedding_size = 100
 skip_window = 1  # How many words to consider left and right.
 num_skips = 2  # How many times to reuse an input to generate a label.
-# We pick a random validation set to sample nearest neighbors. here we limit the
-# validation samples to the words that have a low numeric ID, which by
-# construction are also the most frequent.
 
 graph = tf.Graph()
 
@@ -116,11 +105,10 @@ with graph.as_default(), tf.device('/cpu:0'):
         tf.truncated_normal([vocabulary_size, embedding_size], stddev=1.0 / math.sqrt(embedding_size)))
     softmax_biases = tf.Variable(tf.zeros([vocabulary_size]))
 
-# co się dzieje w środku
-# jak jest tworzony embedding
     embed = tf.nn.embedding_lookup(embeddings, train_dataset)
     loss = tf.reduce_mean(
-        tf.nn.sampled_softmax_loss(softmax_weights, softmax_biases, train_labels, embed, num_sampled, vocabulary_size))
+        tf.nn.sampled_softmax_loss(weights=softmax_weights, biases=softmax_biases, labels=train_labels, inputs=embed,
+                                   num_sampled=num_sampled, num_classes=vocabulary_size))
     optimizer = tf.train.AdagradOptimizer(1.0).minimize(loss)
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
     normalized_embeddings = embeddings / norm
@@ -168,7 +156,6 @@ def plot(embeddings, labels):
         pylab.annotate(label, xy=(x, y), xytext=(5, 2), textcoords='offset points',
                        ha='right', va='bottom')
     pylab.show()
-
 
 words = [reverse_dictionary[i].decode('utf-8') for i in range(1, num_points + 1)]
 plot(two_d_embeddings, words)

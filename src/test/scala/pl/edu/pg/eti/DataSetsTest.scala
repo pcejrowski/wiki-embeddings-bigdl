@@ -5,9 +5,9 @@ import org.scalatest.FlatSpec
 
 class DataSetsTest extends FlatSpec {
 
-  behavior of "DataSets"
-
-  val testee = new DataSets
+//  behavior of "DataSets"
+//
+//  val testee = new DataSets
   //  it should "read articles_dict" in {
   //    val actual = testee.articlesDict()
   //    println(actual)
