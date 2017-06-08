@@ -15,6 +15,8 @@ then
     SPARK_HOME="$HOME/Software/spark-2.1.0-bin-hadoop2.6/"
 fi
 
+source ../BigDL/scripts/bigdl.sh
+
 ${SPARK_HOME}/bin/spark-submit \
    --master "local[*]" \
    --driver-memory 8g \

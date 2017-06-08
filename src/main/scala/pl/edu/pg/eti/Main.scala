@@ -15,7 +15,9 @@ object Main {
       .configParser
       .parse(args, TextClassificationParams())
       .foreach { param =>
-        generateTFIDF(param)
+//        classifyText(param)
+        checkModel(param)
+//        generateTFIDF(param)
       }
   }
 
@@ -48,16 +50,16 @@ object Main {
       catCalc.calcCategoriesRepresentations(tfIdfs, catMembership)
     }
 
-    val distances = loadOrCalculate("distances"){
+    val distances = loadOrCalculate("distances") {
       val filter = dataSets.categoriesFilter()
       val data = cats.filter(x => filter.contains(x._1))
       catCalc.calcCatsDistance(data)
     }
 
-    val distancesFinal = loadOrCalculate("distances-final"){
+    val distancesFinal = loadOrCalculate("distances-final") {
       val catsDict = dataSets.categoriesDictRaw()
       val data = distances
-        .map{ case (cat1Id, cat2Id, dist) => (catsDict.getOrElse(cat1Id, ""), catsDict.getOrElse(cat2Id, ""), dist) }
+        .map { case (cat1Id, cat2Id, dist) => (catsDict.getOrElse(cat1Id, ""), catsDict.getOrElse(cat2Id, ""), dist) }
         .collect()
         .sortBy(_._3)
 
@@ -81,6 +83,7 @@ object Main {
   }
 
   private def classifyText(params: TextClassificationParams) = new TextClassifier(params).train()
+  private def checkModel(params: TextClassificationParams) = new TextClassifier(params).checkModel()
 
 
 }
