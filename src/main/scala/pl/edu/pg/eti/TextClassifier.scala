@@ -9,9 +9,12 @@ import com.intel.analytics.bigdl.tensor.Tensor
 import com.intel.analytics.bigdl.utils.{Engine, File, T}
 import org.apache.log4j.{Level => Levle4j, Logger => Logger4j}
 import org.apache.spark.SparkContext
+import org.apache.spark.ml.linalg
+import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.slf4j.{Logger, LoggerFactory}
-import pl.edu.pg.eti.DataSets.{Content, NewCategoryIdF}
+import pl.edu.pg.eti.CategoriesCalculator.Distance
+import pl.edu.pg.eti.DataSets._
 import pl.edu.pg.eti.Word2Vec.WordMetaIdxF
 
 import scala.collection.mutable.{Map => MMap}
@@ -26,6 +29,47 @@ class TextClassifier(param: TextClassificationParams) {
   val textDataDir = s"${param.baseDir}"
   var classNum: Int = new DataSets(param.baseDir).categoriesDict().size
 
+  def generateEmbeddings(implicit param: TextClassificationParams): Unit = {
+    val conf = Engine
+      .createSparkConf()
+      .setAppName("wiki-embeddings")
+      .set("spark.task.maxFailures", "1")
+
+    implicit val sc = new SparkContext(conf)
+    val rdd: RDD[(Array[WordVec], NewCategoryIdF)] = getVectorizedRdd(sc)
+
+    val catCalc = new CategoriesCalculator
+    val datasets = new DataSets()
+    val dict: Map[CategoryId, NewCategoryId] = datasets.categoriesDict()
+    val reversedDict: Map[NewCategoryId, CategoryId] = dict.map { case (cid, ncid) => ncid -> cid }.toMap
+    val filter: Set[NewCategoryId] = datasets.categoriesFilter().map(dict.getOrElse(_, 0))
+    val reduced: RDD[(NewCategoryId, linalg.Vector)] = rdd
+      .map { case (vectors, label) =>
+        val vector = vectors
+          .reduce((a1, a2) => a1
+            .zip(a2)
+            .map { case (v1, v2) => v1 + v2 }
+          )
+        val dense = Vectors.dense(vector.map(_.toDouble))
+        label.toInt -> dense
+      }
+      .filter { case (label, _) =>filter.contains(label)}
+
+    val distances: RDD[(CategoryId, CategoryId, Distance)] = catCalc.calcCatsDistance(reduced)
+    val catsDict: Map[CategoryId, CategoryName] = datasets.categoriesDictRaw()
+    val finalDistances = Main.loadOrCalculate("distances-final-embeddings") {
+      val data = distances
+        .map { case (cat1Id, cat2Id, dist) =>
+          (reversedDict.get(cat1Id).flatMap(catsDict.get).getOrElse(""),
+            reversedDict.get(cat1Id).flatMap(catsDict.get).getOrElse(""),
+            dist)
+        }
+        .collect()
+        .sortBy(_._3)
+
+      sc.parallelize(data, 1)
+    }
+  }
 
   def checkModel(): Unit = {
     val conf = Engine
@@ -86,6 +130,21 @@ class TextClassifier(param: TextClassificationParams) {
     val sequenceLen: Int = param.maxSequenceLength
     val embeddingDim: Int = param.embeddingDim
 
+    val sampleRDD: RDD[Sample[WordMetaIdxF]] = getVectorizedRdd(sc)
+      .map { case (input: Array[Array[WordMetaIdxF]], label: WordMetaIdxF) =>
+        Sample(featureTensor =
+          Tensor(input.flatten, Array(sequenceLen, embeddingDim)).transpose(1, 2).contiguous(),
+          labelTensor = Tensor(Array(label), Array(1))
+        )
+      }
+    sampleRDD
+  }
+
+
+  def getVectorizedRdd(sc: SparkContext): RDD[(Array[WordVec], NewCategoryIdF)] = {
+    val sequenceLen: Int = param.maxSequenceLength
+    val embeddingDim: Int = param.embeddingDim
+
     val data: Array[(Content, NewCategoryIdF)] = new DataSets(textDataDir).loadData()
     val dataRdd = sc.parallelize(data, param.partitionNum)
     val (word2Meta, word2Vec) = new TextAnalyzer(gloveDir, param).analyzeTexts(dataRdd)
@@ -103,15 +162,7 @@ class TextClassifier(param: TextClassificationParams) {
       .map { case (tokens: Array[WordMetaIdxF], label: NewCategoryIdF) =>
         (vectorization(tokens, embeddingDim, word2VecBC.value), label)
       }
-
-    val sampleRDD: RDD[Sample[WordMetaIdxF]] = vectorizedRdd
-      .map { case (input: Array[Array[WordMetaIdxF]], label: WordMetaIdxF) =>
-        Sample(featureTensor =
-          Tensor(input.flatten, Array(sequenceLen, embeddingDim)).transpose(1, 2).contiguous(),
-          labelTensor = Tensor(Array(label), Array(1))
-        )
-      }
-    sampleRDD
+    vectorizedRdd
   }
 }
 

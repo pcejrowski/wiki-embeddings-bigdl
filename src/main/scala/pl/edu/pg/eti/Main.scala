@@ -5,6 +5,8 @@ import java.io.File
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+import pl.edu.pg.eti.CategoriesCalculator.Distance
+import pl.edu.pg.eti.DataSets.CategoryName
 
 import scala.reflect.ClassTag
 
@@ -15,8 +17,9 @@ object Main {
       .configParser
       .parse(args, TextClassificationParams())
       .foreach { param =>
+        generateEmbeddings(param)
 //        classifyText(param)
-        checkModel(param)
+//        checkModel(param)
 //        generateTFIDF(param)
       }
   }
@@ -56,7 +59,7 @@ object Main {
       catCalc.calcCatsDistance(data)
     }
 
-    val distancesFinal = loadOrCalculate("distances-final") {
+    val distancesFinal: RDD[(CategoryName, CategoryName, Distance)] = loadOrCalculate("distances-final") {
       val catsDict = dataSets.categoriesDictRaw()
       val data = distances
         .map { case (cat1Id, cat2Id, dist) => (catsDict.getOrElse(cat1Id, ""), catsDict.getOrElse(cat2Id, ""), dist) }
@@ -84,6 +87,6 @@ object Main {
 
   private def classifyText(params: TextClassificationParams) = new TextClassifier(params).train()
   private def checkModel(params: TextClassificationParams) = new TextClassifier(params).checkModel()
-
+  private def generateEmbeddings(params: TextClassificationParams) = new TextClassifier(params).generateEmbeddings(params)
 
 }
