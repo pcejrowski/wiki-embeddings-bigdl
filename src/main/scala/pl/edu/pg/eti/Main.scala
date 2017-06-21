@@ -17,9 +17,10 @@ object Main {
       .configParser
       .parse(args, TextClassificationParams())
       .foreach { param =>
-        generateEmbeddings(param)
-//        classifyText(param)
-//        checkModel(param)
+        cf(param)
+//        generateEmbeddings(param)
+//        training(param)
+//        testing(param)
 //        generateTFIDF(param)
       }
   }
@@ -85,8 +86,15 @@ object Main {
     }
   }
 
-  private def classifyText(params: TextClassificationParams) = new TextClassifier(params).train()
-  private def checkModel(params: TextClassificationParams) = new TextClassifier(params).checkModel()
-  private def generateEmbeddings(params: TextClassificationParams) = new TextClassifier(params).generateEmbeddings(params)
+  def load[T: ClassTag](name: String)(implicit params: TextClassificationParams, sc: SparkContext): RDD[T] = {
+    val baseDir = new File(params.baseDir, "target")
+    val objectFiles = new File(baseDir, name)
+    sc.objectFile[T](objectFiles.getAbsolutePath)
+  }
 
+
+  private def training(params: TextClassificationParams) = new TextClassifier(params).train()
+  private def testing(params: TextClassificationParams) = new TextClassifier(params).test()
+  private def generateEmbeddings(params: TextClassificationParams) = new TextClassifier(params).generateEmbeddings(params)
+  private def cf(params: TextClassificationParams) = new CollaborativeFiltering(params).evaluate()
 }

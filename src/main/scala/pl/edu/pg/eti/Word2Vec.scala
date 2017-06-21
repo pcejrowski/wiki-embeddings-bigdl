@@ -15,7 +15,7 @@ class Word2Vec(val gloveDir: String) {
 
   def loadWord2Vec(word2Meta: Map[Word, WordMeta]): Map[WordMetaIdxF, WordVec] = {
     val preWord2Vec = MMap[WordMetaIdxF, WordVec]()
-    val filename = s"$gloveDir/simple-wiki-embeddings.txt"
+    val filename = s"$gloveDir/glove.6B.100d.txt"
     for (line <- Source.fromFile(filename, "ISO-8859-1").getLines) {
       val values = line.split(" ")
       val word = values(0)

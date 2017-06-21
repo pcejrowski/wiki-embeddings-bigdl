@@ -36,32 +36,54 @@ class TextClassifier(param: TextClassificationParams) {
       .set("spark.task.maxFailures", "1")
 
     implicit val sc = new SparkContext(conf)
+
     val rdd: RDD[(Array[WordVec], NewCategoryIdF)] = getVectorizedRdd(sc)
 
     val catCalc = new CategoriesCalculator
     val datasets = new DataSets()
     val dict: Map[CategoryId, NewCategoryId] = datasets.categoriesDict()
-    val reversedDict: Map[NewCategoryId, CategoryId] = dict.map { case (cid, ncid) => ncid -> cid }.toMap
+    val reversedDict: Map[NewCategoryId, CategoryId] = dict.map { case (cid, ncid) => ncid -> cid }
     val filter: Set[NewCategoryId] = datasets.categoriesFilter().map(dict.getOrElse(_, 0))
-    val reduced: RDD[(NewCategoryId, linalg.Vector)] = rdd
-      .map { case (vectors, label) =>
-        val vector = vectors
-          .reduce((a1, a2) => a1
-            .zip(a2)
-            .map { case (v1, v2) => v1 + v2 }
-          )
-        val dense = Vectors.dense(vector.map(_.toDouble))
-        label.toInt -> dense
-      }
-      .filter { case (label, _) =>filter.contains(label)}
-
-    val distances: RDD[(CategoryId, CategoryId, Distance)] = catCalc.calcCatsDistance(reduced)
     val catsDict: Map[CategoryId, CategoryName] = datasets.categoriesDictRaw()
-    val finalDistances = Main.loadOrCalculate("distances-final-embeddings") {
+
+    val categoryCentroids: RDD[(CategoryId, linalg.Vector)] = Main.loadOrCalculate("category-centroids") {
+      rdd
+        .filter { case (_, label) => filter.contains(label.toInt) }
+        .map { case (vectors, label) =>
+          val vector = vectors
+            .reduce((a1, a2) => a1
+              .zip(a2)
+              .map { case (v1, v2) => v1 + v2 }
+            )
+          val dense: linalg.Vector = Vectors.dense(vector.map(_.toDouble))
+          label.toInt -> dense
+        }
+        .groupByKey()
+        .map { case (ncid, vectors: Iterable[linalg.Vector]) =>
+          val centroid: linalg.Vector = vectors
+            .reduce { (v1: linalg.Vector, v2: linalg.Vector) =>
+              Vectors
+                .dense(
+                  v1.toArray
+                    .zip(v2.toArray)
+                    .map { case (a1, a2) => a1 + a2 })
+            }
+          Vectors.dense(centroid.toArray.map(x => x / vectors.size))
+          (reversedDict.getOrElse(ncid, 0), centroid)
+        }
+        .repartition(1)
+    }
+    val categoryCentroidsWithNames = Main.loadOrCalculate("category-centroids-with-names") {
+      categoryCentroids
+        .map { case (catId, vector) => (catsDict.getOrElse(catId, ""), vector) }
+        .repartition(1)
+    }
+    val distances: RDD[(CategoryId, CategoryId, Distance)] = catCalc.calcCatsDistance(categoryCentroids)
+    val finalDistances: RDD[(CategoryName, CategoryName, Distance)] = Main.loadOrCalculate("distances-final-embeddings") {
       val data = distances
         .map { case (cat1Id, cat2Id, dist) =>
-          (reversedDict.get(cat1Id).flatMap(catsDict.get).getOrElse(""),
-            reversedDict.get(cat1Id).flatMap(catsDict.get).getOrElse(""),
+          (catsDict.getOrElse(cat1Id, ""),
+            catsDict.getOrElse(cat2Id, ""),
             dist)
         }
         .collect()
@@ -71,7 +93,7 @@ class TextClassifier(param: TextClassificationParams) {
     }
   }
 
-  def checkModel(): Unit = {
+  def test(): Unit = {
     val conf = Engine
       .createSparkConf()
       .setAppName("wiki-embeddings")
@@ -79,14 +101,15 @@ class TextClassifier(param: TextClassificationParams) {
 
     val sc = new SparkContext(conf)
     val sampleRDD: RDD[Sample[WordMetaIdxF]] = getSampleRdd(sc)
-    val testRDD: RDD[Sample[WordMetaIdxF]] = sampleRDD.sample(false, 0.2)
+    val testRDD: RDD[Sample[WordMetaIdxF]] = sampleRDD.sample(withReplacement = false, 0.2)
 
     Engine.init
     val loaded: Module[WordMetaIdxF] = File.load[Module[Float]]("model.serialized")
-    loaded
+    val x: RDD[(CategoryId, Sample[WordMetaIdxF])] = loaded
       .predictClass(testRDD)
       .zip(testRDD)
-
+    val y: Array[(ValidationResult, ValidationMethod[WordMetaIdxF])] = loaded.evaluate(testRDD, Array(new Top5Accuracy[WordMetaIdxF]))
+    y.foreach { case (result, method) => println(result.result()) }
     sc.stop()
   }
 
@@ -101,7 +124,7 @@ class TextClassifier(param: TextClassificationParams) {
     val sc = new SparkContext(conf)
     Engine.init
     val sampleRDD: RDD[Sample[WordMetaIdxF]] = getSampleRdd(sc)
-    val Array(trainingRDD, validationRDD, testRDD) = sampleRDD.randomSplit(Array(trainingSplit, (1 - trainingSplit) / 2, (1 - trainingSplit) / 2))
+    val Array(trainingRDD, validationRDD, _) = sampleRDD.randomSplit(Array(trainingSplit, (1 - trainingSplit) / 2, (1 - trainingSplit) / 2))
 
     val optimizer = Optimizer(
       model = new Model(param).buildModel(classNum),
@@ -120,13 +143,14 @@ class TextClassifier(param: TextClassificationParams) {
       .setEndWhen(Trigger.maxEpoch(10))
       .optimize()
 
+
     val modelFile = "model.serialized"
     model.save(modelFile, overWrite = true)
 
     sc.stop()
   }
 
-  def getSampleRdd(sc: SparkContext) = {
+  def getSampleRdd(sc: SparkContext): RDD[Sample[WordMetaIdxF]] = {
     val sequenceLen: Int = param.maxSequenceLength
     val embeddingDim: Int = param.embeddingDim
 

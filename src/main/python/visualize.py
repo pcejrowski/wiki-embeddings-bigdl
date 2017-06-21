@@ -10,7 +10,7 @@ column_labels = list(
      'Domesticated_animals', 'History', 'Philosophers', 'Ethics', 'War', 'Pets', 'Gods_and_goddesses'])
 row_labels = column_labels
 
-reader = csv.reader(open("../../../datasets/distances-final.csv", "rb"), delimiter=",")
+reader = csv.reader(open("../../../datasets/distances-final-embeddings.csv", "rb"), delimiter=",")
 x = list(reader)
 
 result = sorted(numpy.array(x).astype("string"), key=itemgetter(0))
